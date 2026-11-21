@@ -1,0 +1,30 @@
+# Everyday Cool Arcade — game manifest
+# One line per game, pipe-separated:
+#   slug | collection project folder | game file | lesson file (or -) | extra files (comma-separated, or -)
+# Paths are relative to the collection's projects/ directory and the
+# game's own project folder. The game file and its lesson are copied as
+# siblings into dist/games/<slug>/ so the relative links between them
+# (including the in-game lesson pop-ups) work unchanged. Extra files are
+# support files a game page needs (Stack-a-Bot lives inside the Games
+# Room page and brings its scripts and styles along).
+siege-demolition|everyday-physics|siege-demolition.html|-|-
+bridge-builder-truss|everyday-physics|bridge-builder-truss.html|bridge-builder-truss-lesson.html|-
+orbital-pinball|everyday-physics|orbital-pinball.html|-|-
+orbital-gravity-golf|everyday-physics|orbital-gravity-golf.html|orbital-gravity-golf-lesson.html|-
+lunar-lander-cave|everyday-physics|lunar-lander-cave.html|lunar-lander-cave-lesson.html|-
+docking|everyday-physics|docking.html|docking-lesson.html|-
+hill-climb-suspension|everyday-physics|hill-climb-suspension.html|-|-
+stage-it|everyday-physics|stage-it.html|stage-it-lesson.html|-
+jelly-softbody-platformer|everyday-physics|jelly-softbody-platformer.html|-|-
+falling-sand-sandbox|everyday-physics|falling-sand-sandbox.html|-|-
+pendulum-grapple-swinger|everyday-physics|pendulum-grapple-swinger.html|pendulum-grapple-swinger-lesson.html|-
+marble-run|everyday-physics|marble-run.html|-|-
+ballast|everyday-physics|ballast.html|ballast-lesson.html|-
+air-hockey-curl|everyday-physics|air-hockey-curl.html|-|-
+ragdoll-archery-duel|everyday-physics|ragdoll-archery-duel.html|-|-
+pool-table-physics|everyday-physics|pool-table-physics.html|-|-
+tensor-tris|games-room|tensor-tris.html|-|-
+laser-mirrors|everyday-light|laser-mirrors.html|laser-mirrors-lesson.html|-
+tune-the-string|everyday-sound|tune-the-string.html|tune-the-string-lesson.html|-
+shake-table|everyday-engineering|shake-table.html|shake-table-lesson.html|-
+stack-a-bot|games-room|index.html|-|stackabot.js,app.js,style.css,games-banner.jpg
