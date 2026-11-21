@@ -27,6 +27,7 @@ fi
 rm -rf "$DIST"
 mkdir -p "$DIST/games"
 cp "$REPO_ROOT/interface/index.html" "$DIST/index.html"
+cp "$REPO_ROOT/interface/arcade-robots.webp" "$DIST/arcade-robots.webp"
 
 games=0
 lessons=0
