@@ -11,19 +11,19 @@ warming up neurons — and justify: the lessons are right there in the package.
 
 ## Inventory (v1.0.0)
 
-**21 games, 10 with lessons attached.**
+**21 games, 20 with lessons attached.**
 
 With lessons: Bridge Builder — Truss Stress Sim, Orbital Slingshot —
 Gravity Golf, Lunar Lander — Thruster Cave, Docking — Orbital Rendezvous,
 Stage It, Pendulum Grapple Swinger, Ballast, Laser & Mirrors, Tune the
-String, Shake Table.
+String, Shake Table, Siege Slingshot Demolition, Orbital Pinball,
+2D Hill-Climb — Suspension Trials, Jelly Soft-Body Platformer,
+Falling Sand — Cellular Physics Lab, Marble Run — Rube Goldberg Builder,
+Air Hockey & Curl-Shot Shuffleboard, 2D Ragdoll Archery Duel,
+SVG Pool Table — Angles & Force Lab, Tensor-Tris.
 
-Lessons still in the works at build time: Siege Slingshot Demolition,
-Orbital Pinball, 2D Hill-Climb — Suspension Trials, Jelly Soft-Body
-Platformer, Falling Sand — Cellular Physics Lab, Marble Run — Rube Goldberg
-Builder, Air Hockey & Curl-Shot Shuffleboard, 2D Ragdoll Archery Duel,
-SVG Pool Table — Angles & Force Lab, Tensor-Tris, Stack-a-Bot. The
-interface says so honestly on each card rather than hiding the gap.
+The one game still waiting for its lesson at build time is Stack-a-Bot;
+the interface says so honestly on its card rather than hiding the gap.
 
 The inventory itself lives in `tools/games.manifest` — the Game Table in
 Everyday Physics, plus Stack-a-Bot, the Games Room's own falling-parts
