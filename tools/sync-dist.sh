@@ -15,12 +15,14 @@
 #                             page; add the game to the manifest.
 #   dist/games/<slug>/     <- the game file, its lesson file, and any
 #                             support files, per tools/games.manifest
-#   dist/emulators/        <- the Emulator Box overlay: the six Nerd
+#   dist/emulators/        <- the Emulator Box overlay: the nine Nerd
 #                             Heaven console pages and their lessons,
 #                             copied FLAT (the pages cross-link siblings
 #                             by bare filename), plus their racks
 #                             (javatari/, jsnes/, emulatorjs-snes/,
-#                             emulatorjs-dos/, apple2ts/) copied whole.
+#                             emulatorjs-dos/, apple2ts/,
+#                             emulatorjs-mame/, emulatorjs-7800/,
+#                             emulatorjs-5200/) copied whole.
 #                             dist/emulators/index.html is a stub that
 #                             bounces the consoles' room-index link back
 #                             to the arcade shelf.
@@ -88,7 +90,7 @@ while IFS='|' read -r slug project game lesson extras title; do
 done < "$MANIFEST"
 
 # ---------------------------------------------------------------------------
-# The Emulator Box overlay. The six consoles are Nerd Heaven pages, not
+# The Emulator Box overlay. The nine consoles are Nerd Heaven pages, not
 # manifest games: each page expects its lesson, its sibling consoles, and
 # its rack folder beside it under bare relative names, so the whole set
 # is copied FLAT into dist/emulators/ and cross-links work unchanged.
@@ -113,8 +115,11 @@ the-nes-console.html|the-nes-console-lesson.html|The NES Console
 the-snes-console.html|the-snes-console-lesson.html|The SNES Console
 the-dos-console.html|the-dos-console-lesson.html|The DOS Console
 the-apple-iie-console.html|the-apple-iie-console-lesson.html|The Apple IIe Console
+the-mame-console.html|the-mame-console-lesson.html|The MAME Console
+the-7800-console.html|the-7800-console-lesson.html|The 7800 Console
+the-5200-console.html|the-5200-console-lesson.html|The 5200 Console
 EMU_LIST
-for rack in javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts; do
+for rack in javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts emulatorjs-mame emulatorjs-7800 emulatorjs-5200; do
   cp -r "$EMU_SRC/$rack" "$EMU/$rack"
 done
 cat > "$EMU/index.html" <<'EMU_STUB'
@@ -130,7 +135,7 @@ cat > "$EMU/index.html" <<'EMU_STUB'
 </body>
 </html>
 EMU_STUB
-echo "  emulators: $emu_count consoles, racks javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts -> $EMU"
+echo "  emulators: $emu_count consoles, racks javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts emulatorjs-mame emulatorjs-7800 emulatorjs-5200 -> $EMU"
 
 # The Game Documents page: interface styling, generated entirely from
 # the manifest rows collected above (plus the counts from this run).
@@ -270,7 +275,7 @@ PAGE_MID
   <section>
     <p class="eyebrow">Nerd Heaven</p>
     <h1 style="font-size: clamp(28px, 4vw, 40px);">The <em>Emulator Box</em></h1>
-    <p class="lead">The six consoles keep their back doors too: each lesson is the audit of the
+    <p class="lead">The nine consoles keep their back doors too: each lesson is the audit of the
       machine it ships — what was measured, what bends, and what to bring yourself. The consoles
       play from the shelf's Emulator Box section.</p>
     <ul class="doc-list">
