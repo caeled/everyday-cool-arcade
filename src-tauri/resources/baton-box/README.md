@@ -35,7 +35,7 @@ internet needed, works on Windows, Mac, and Linux.
    - **Mac/Linux:** in a terminal in this folder, `python3 baton_box.py`
      (plain `python baton_box.py` also works on many systems)
 4. The box prints its addresses and serves a home page at
-   **`http://<host-address>:8765`** (default port **8765**; override
+   **`http://<host-address>:8917`** (default port **8917**; override
    with the `BATON_BOX_PORT` environment variable). Leave the window
    open while you play — that window *is* the box. Ctrl+C or closing it
    puts the box away; games are saved and return next start.

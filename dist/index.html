@@ -852,9 +852,10 @@
     return;
   }
   function show(s) {
-    status.textContent = s.message + (s.running ? '  ' + s.url : '');
-    btnStart.disabled = !!s.running;
-    btnStop.disabled = !s.running;
+    status.textContent = s.message + (s.state === 'running' ? '  ' + s.url : '');
+    btnStart.disabled = (s.state === 'running');
+    btnStop.disabled = (s.state !== 'running');
+    btnOpen.disabled = (s.state !== 'running');
   }
   function fail(e) { status.textContent = 'The box said no: ' + e; }
   invoke('baton_status').then(show).catch(fail);

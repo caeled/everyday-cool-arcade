@@ -158,11 +158,12 @@ struct BatonState {
 #[derive(serde::Serialize)]
 struct BatonStatus {
     running: bool,
+    state: String,
     url: String,
     message: String,
 }
 
-const BATON_URL: &str = "http://127.0.0.1:8765/";
+const BATON_URL: &str = "http://127.0.0.1:8917/";
 
 /// Locate the bundled Baton Box inside the installed resources. The
 /// resource layout has varied across Tauri versions, so try the known
@@ -248,19 +249,63 @@ fn find_python() -> Option<String> {
     None
 }
 
-/// Is anything already answering on the box's port? (A box Steven
-/// started by hand counts: the shelf reports it as running rather
-/// than launching a second one into a port fight.)
-fn baton_port_up() -> bool {
-    let Ok(addr) = "127.0.0.1:8765".parse::<std::net::SocketAddr>() else {
-        return false;
-    };
-    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(300)).is_ok()
+/// What is actually on the box's port? Three answers, and only one
+/// of them is the box. (The first build asked only "is anything
+/// answering?" — and on Steven's machine something was: AI-Delivery
+/// held the old port, so the panel reported a box that had never
+/// started and greyed out its own Start button. Field report,
+/// 25 November 2026. Now the panel asks the port who it is.)
+enum BatonProbe {
+    /// Our box: it answered /api/ping with its own name.
+    Ours,
+    /// Something else holds the port.
+    Foreign,
+    /// Nothing is answering.
+    Down,
 }
 
-/// The current truth about the box: our child still alive, or the
-/// port answering. A child that died on its own is reaped here.
-fn baton_snapshot(state: &BatonState) -> bool {
+fn baton_probe() -> BatonProbe {
+    use std::io::{Read, Write};
+    let Ok(addr) = "127.0.0.1:8917".parse::<std::net::SocketAddr>() else {
+        return BatonProbe::Down;
+    };
+    let Ok(mut stream) =
+        std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(300))
+    else {
+        return BatonProbe::Down;
+    };
+    let _ = stream.set_read_timeout(Some(std::time::Duration::from_millis(700)));
+    let _ = stream.set_write_timeout(Some(std::time::Duration::from_millis(700)));
+    if stream
+        .write_all(b"GET /api/ping HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
+        .is_err()
+    {
+        return BatonProbe::Foreign;
+    }
+    let mut buf = String::new();
+    let mut chunk = [0u8; 1024];
+    loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                buf.push_str(&String::from_utf8_lossy(&chunk[..n]));
+                if buf.len() > 4096 {
+                    break;
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    if buf.contains("\"baton-box\"") {
+        BatonProbe::Ours
+    } else {
+        BatonProbe::Foreign
+    }
+}
+
+/// Is the child this app started still alive? A child that died on
+/// its own is reaped here.
+fn baton_child_alive(state: &BatonState) -> bool {
     let mut guard = state.child.lock().unwrap();
     if let Some(child) = guard.as_mut() {
         match child.try_wait() {
@@ -268,22 +313,45 @@ fn baton_snapshot(state: &BatonState) -> bool {
             _ => *guard = None,
         }
     }
-    baton_port_up()
+    false
+}
+
+/// The current truth about the box, in one place so every command
+/// reports the same state.
+fn baton_status_now(state: &BatonState) -> BatonStatus {
+    if baton_child_alive(state) {
+        return BatonStatus {
+            running: true,
+            state: "running".into(),
+            url: BATON_URL.into(),
+            message: "The Baton Box is running on this computer.".into(),
+        };
+    }
+    match baton_probe() {
+        BatonProbe::Ours => BatonStatus {
+            running: true,
+            state: "running".into(),
+            url: BATON_URL.into(),
+            message: "The Baton Box is running on this computer.".into(),
+        },
+        BatonProbe::Foreign => BatonStatus {
+            running: false,
+            state: "taken".into(),
+            url: BATON_URL.into(),
+            message: "Another program on this computer is using port 8917, so the Baton Box can't start. Close that program, then try Start again.".into(),
+        },
+        BatonProbe::Down => BatonStatus {
+            running: false,
+            state: "stopped".into(),
+            url: BATON_URL.into(),
+            message: "The Baton Box is stopped.".into(),
+        },
+    }
 }
 
 #[tauri::command]
 fn baton_status(state: tauri::State<'_, BatonState>) -> BatonStatus {
-    let running = baton_snapshot(&state);
-    BatonStatus {
-        running,
-        url: BATON_URL.into(),
-        message: if running {
-            "The Baton Box is running on this computer."
-        } else {
-            "The Baton Box is stopped."
-        }
-        .into(),
-    }
+    baton_status_now(&state)
 }
 
 #[tauri::command]
@@ -298,6 +366,7 @@ fn baton_start(
                 Ok(None) => {
                     return Ok(BatonStatus {
                         running: true,
+                        state: "running".into(),
                         url: BATON_URL.into(),
                         message: "The Baton Box is already running.".into(),
                     })
@@ -306,12 +375,24 @@ fn baton_start(
             }
         }
     }
-    if baton_port_up() {
-        return Ok(BatonStatus {
-            running: true,
-            url: BATON_URL.into(),
-            message: "Something is already answering on the box's port — a Baton Box started outside the app is probably already running.".into(),
-        });
+    match baton_probe() {
+        BatonProbe::Ours => {
+            return Ok(BatonStatus {
+                running: true,
+                state: "running".into(),
+                url: BATON_URL.into(),
+                message: "The Baton Box is already running — started outside the app.".into(),
+            });
+        }
+        BatonProbe::Foreign => {
+            return Ok(BatonStatus {
+                running: false,
+                state: "taken".into(),
+                url: BATON_URL.into(),
+                message: "Another program on this computer is using port 8917, so the Baton Box can't start. Close that program, then try Start again.".into(),
+            });
+        }
+        BatonProbe::Down => {}
     }
     let dir = baton_runtime_dir(&handle)?;
     let python = find_python().ok_or_else(|| {
@@ -345,6 +426,7 @@ fn baton_start(
             *state.child.lock().unwrap() = Some(child);
             Ok(BatonStatus {
                 running: true,
+                state: "running".into(),
                 url: BATON_URL.into(),
                 message: "The Baton Box is running on this computer. Open the box to host or join a game.".into(),
             })
@@ -363,15 +445,22 @@ fn baton_stop(state: tauri::State<'_, BatonState>) -> BatonStatus {
             killed = true;
         }
     }
-    if baton_port_up() {
-        BatonStatus {
+    match baton_probe() {
+        BatonProbe::Ours => BatonStatus {
             running: true,
+            state: "running".into(),
             url: BATON_URL.into(),
-            message: "The app's box is stopped, but something is still answering on the port — a Baton Box started outside the app is still running.".into(),
-        }
-    } else {
-        BatonStatus {
+            message: "The app's box is stopped, but a Baton Box started outside the app is still running.".into(),
+        },
+        BatonProbe::Foreign => BatonStatus {
             running: false,
+            state: "taken".into(),
+            url: BATON_URL.into(),
+            message: "The app's box is stopped. Another program on this computer is using port 8917.".into(),
+        },
+        BatonProbe::Down => BatonStatus {
+            running: false,
+            state: "stopped".into(),
             url: BATON_URL.into(),
             message: if killed {
                 "The Baton Box is stopped."
@@ -379,7 +468,7 @@ fn baton_stop(state: tauri::State<'_, BatonState>) -> BatonStatus {
                 "The Baton Box was not running."
             }
             .into(),
-        }
+        },
     }
 }
 
