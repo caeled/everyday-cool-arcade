@@ -15,6 +15,19 @@
 #                             page; add the game to the manifest.
 #   dist/games/<slug>/     <- the game file, its lesson file, and any
 #                             support files, per tools/games.manifest
+#   dist/emulators/        <- the Emulator Box overlay: the six Nerd
+#                             Heaven console pages and their lessons,
+#                             copied FLAT (the pages cross-link siblings
+#                             by bare filename), plus their racks
+#                             (javatari/, jsnes/, emulatorjs-snes/,
+#                             emulatorjs-dos/, apple2ts/) copied whole.
+#                             dist/emulators/index.html is a stub that
+#                             bounces the consoles' room-index link back
+#                             to the arcade shelf.
+#   src-tauri/resources/baton-box/  <- the Baton Box server bundle the
+#                             app's Start-the-Baton-Box control runs:
+#                             refreshed from a sibling ../baton-box
+#                             checkout (override with BATON_BOX_DIR).
 # Game and lesson files are copied as siblings so the relative links
 # between them (including the in-game lesson pop-ups) work unchanged.
 set -euo pipefail
@@ -42,7 +55,8 @@ cp "$REPO_ROOT/interface/about.html" "$DIST/about.html"
 cp "$REPO_ROOT/interface/arcade-robots.webp" "$DIST/arcade-robots.webp"
 
 DOC_ROWS="$(mktemp)"
-trap 'rm -f "$DOC_ROWS"' EXIT
+EMU_ROWS="$(mktemp)"
+trap 'rm -f "$DOC_ROWS" "$EMU_ROWS"' EXIT
 
 games=0
 lessons=0
@@ -72,6 +86,51 @@ while IFS='|' read -r slug project game lesson extras title; do
       "$(html_escape "$title")" >> "$DOC_ROWS"
   fi
 done < "$MANIFEST"
+
+# ---------------------------------------------------------------------------
+# The Emulator Box overlay. The six consoles are Nerd Heaven pages, not
+# manifest games: each page expects its lesson, its sibling consoles, and
+# its rack folder beside it under bare relative names, so the whole set
+# is copied FLAT into dist/emulators/ and cross-links work unchanged.
+# The one link that cannot resolve there is the consoles' room-index
+# link (index.html); the stub written below bounces it to the shelf.
+EMU_SRC="$PROJECTS/nerd-heaven-tech-support"
+EMU="$DIST/emulators"
+mkdir -p "$EMU"
+emu_count=0
+while IFS='|' read -r emu_page emu_lesson emu_title; do
+  case "$emu_page" in ''|\#*) continue ;; esac
+  cp "$EMU_SRC/$emu_page" "$EMU/$emu_page"
+  cp "$EMU_SRC/$emu_lesson" "$EMU/$emu_lesson"
+  printf '      <li><span class="doc-title">%s</span> <a class="doc-link" href="emulators/%s">📖 Read the lesson</a></li>\n' \
+    "$(html_escape "$emu_title")" "$emu_lesson" >> "$EMU_ROWS"
+  emu_count=$((emu_count + 1))
+  echo "  emulators: $emu_page + $emu_lesson"
+done <<'EMU_LIST'
+the-6502-bench.html|the-6502-bench-lesson.html|The 6502 Bench
+the-2600-console.html|the-2600-console-lesson.html|The 2600 Console
+the-nes-console.html|the-nes-console-lesson.html|The NES Console
+the-snes-console.html|the-snes-console-lesson.html|The SNES Console
+the-dos-console.html|the-dos-console-lesson.html|The DOS Console
+the-apple-iie-console.html|the-apple-iie-console-lesson.html|The Apple IIe Console
+EMU_LIST
+for rack in javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts; do
+  cp -r "$EMU_SRC/$rack" "$EMU/$rack"
+done
+cat > "$EMU/index.html" <<'EMU_STUB'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Emulator Box — back to the shelf</title>
+<meta http-equiv="refresh" content="0; url=../index.html">
+</head>
+<body>
+<p>The consoles live on the shelf — <a href="../index.html">back to the Arcade shelf</a>.</p>
+</body>
+</html>
+EMU_STUB
+echo "  emulators: $emu_count consoles, racks javatari jsnes emulatorjs-snes emulatorjs-dos apple2ts -> $EMU"
 
 # The Game Documents page: interface styling, generated entirely from
 # the manifest rows collected above (plus the counts from this run).
@@ -204,6 +263,19 @@ PAGE_HEAD
     <ul class="doc-list">
 PAGE_MID
   cat "$DOC_ROWS"
+  cat <<'PAGE_EMU_HEAD'
+    </ul>
+  </section>
+
+  <section>
+    <p class="eyebrow">Nerd Heaven</p>
+    <h1 style="font-size: clamp(28px, 4vw, 40px);">The <em>Emulator Box</em></h1>
+    <p class="lead">The six consoles keep their back doors too: each lesson is the audit of the
+      machine it ships — what was measured, what bends, and what to bring yourself. The consoles
+      play from the shelf's Emulator Box section.</p>
+    <ul class="doc-list">
+PAGE_EMU_HEAD
+  cat "$EMU_ROWS"
   cat <<'PAGE_TAIL'
     </ul>
   </section>
@@ -219,4 +291,29 @@ PAGE_MID
 PAGE_TAIL
 } > "$DIST/documents.html"
 
-echo "sync-dist: $games games, $lessons lessons -> $DIST"
+# ---------------------------------------------------------------------------
+# The Baton Box server bundle (src-tauri/resources/baton-box/): what the
+# app's Start-the-Baton-Box control runs. Refreshed from a sibling
+# checkout of the standalone box (override with BATON_BOX_DIR). The
+# server file is copied byte-for-byte; runtime state (sessions.json,
+# __pycache__) never rides into the bundle.
+BATON_SRC="${BATON_BOX_DIR:-$REPO_ROOT/../baton-box}"
+BATON_DEST="$REPO_ROOT/src-tauri/resources/baton-box"
+if [ -f "$BATON_SRC/baton_box.py" ]; then
+  rm -rf "$BATON_DEST"
+  mkdir -p "$BATON_DEST"
+  cp "$BATON_SRC/baton_box.py" "$BATON_DEST/baton_box.py"
+  for extra in start-baton-box.bat README.md CONTRACT.md; do
+    if [ -f "$BATON_SRC/$extra" ]; then
+      cp "$BATON_SRC/$extra" "$BATON_DEST/$extra"
+    fi
+  done
+  cp -r "$BATON_SRC/games" "$BATON_DEST/games"
+  find "$BATON_DEST" -type d -name "__pycache__" -prune -exec rm -rf {} +
+  find "$BATON_DEST" -name "sessions.json" -delete
+  echo "  baton-box: server + games refreshed from $BATON_SRC -> $BATON_DEST"
+else
+  echo "  warning: no Baton Box checkout at $BATON_SRC — bundled resources left as they were" >&2
+fi
+
+echo "sync-dist: $games games, $lessons lessons, $emu_count consoles -> $DIST"

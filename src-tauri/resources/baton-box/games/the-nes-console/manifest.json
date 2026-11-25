@@ -1,0 +1,9 @@
+{
+  "id": "the-nes-console",
+  "title": "The NES Console",
+  "page": "the-nes-console.html",
+  "blurb": "A whole NES in one page (JSNES, open source) with an empty cartridge slot — players insert their own .nes files from their own machine. Freeze a brutal moment and hand the next player its State Code: your turn to survive this.",
+  "stateName": "State Code",
+  "turnEnds": "paste-code",
+  "players": "1-2"
+}

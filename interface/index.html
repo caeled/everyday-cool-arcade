@@ -158,6 +158,35 @@
     color: var(--ink-soft);
     font-size: 14.5px;
   }
+
+  .baton {
+    margin-top: 26px;
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 10px rgba(35, 39, 51, 0.18);
+  }
+  .baton h3 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 24px;
+    margin: 0 0 8px;
+  }
+  .baton p { color: #d8d5c9; max-width: 52em; margin: 0 0 6px; }
+  .baton-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .baton button {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 1.5px solid var(--cream);
+    background: transparent;
+    color: var(--cream);
+  }
+  .baton button.primary { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .baton button:disabled { opacity: 0.45; cursor: default; }
+  .baton-status { font-size: 14.5px; margin-top: 12px; color: #bfe3c8; }
 </style>
 </head>
 <body>
@@ -181,6 +210,7 @@
       <a href="#soft">Soft &amp; Squishy</a>
       <a href="#sports">Sports &amp; Spin</a>
       <a href="#guests">Guests from Other Rooms</a>
+      <a href="#emulators">The Emulator Box</a>
     </nav>
   </header>
 
@@ -668,11 +698,142 @@
     </div>
   </section>
 
+  <section class="group" id="emulators">
+    <h2>The Emulator Box</h2>
+    <p class="group-note">Six real machines from Nerd Heaven, bundled whole — bring your own
+      cartridges, disks, and program files from your own library; the Arcade ships the machines,
+      never the games. Each console keeps its audit lesson: what was measured, what bends.</p>
+    <div class="grid">
+
+      <article class="card">
+        <div class="icon">🖥️</div>
+        <h3>The 6502 Bench</h3>
+        <p class="hook">A bare NMOS 6502 with a screen, a keyboard, and a two-pass assembler — write assembly or BASIC, load your own .bin files at the Drive Shelf, and hand the whole machine to the next player as a Machine Code.</p>
+        <p class="concepts">6502 Assembly · BASIC · Save-State Codes</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-6502-bench.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-6502-bench-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="icon">🕹️</div>
+        <h3>The 2600 Console</h3>
+        <p class="hook">Javatari, vendored unmodified — slot your own Atari 2600 cartridges from your library and play, keyboard or gamepad. The audit's test cartridge drew exactly the picture the code says it should.</p>
+        <p class="concepts">Atari 2600 · Javatari · Bring Your Own Cartridges</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-2600-console.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-2600-console-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="icon">🎮</div>
+        <h3>The NES Console</h3>
+        <p class="hook">JSNES in one self-contained page — pick a cartridge from your own library and the console names it, and its mapper, before it plays. Its State Codes ride the Baton Box below.</p>
+        <p class="concepts">NES · JSNES · 22 Mappers · State Codes</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-nes-console.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-nes-console-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="icon">👾</div>
+        <h3>The SNES Console</h3>
+        <p class="hook">EmulatorJS with the Snes9x core, vendored for offline play. Bring your own .smc or .sfc — and trust the key map printed on the page: it was measured at the cartridge, and the lesson tells the story of the day it wasn't.</p>
+        <p class="concepts">SNES · Snes9x · Measured Key Map</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-snes-console.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-snes-console-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="icon">💾</div>
+        <h3>The DOS Console</h3>
+        <p class="hook">DOSBox Pure — zip a DOS drive folder, mount it as C:, and boot to the prompt: DIR, CD, and your own programs. In this window its core asks for cross-origin isolation the app can't give it, so it will point you at the Baton Box below — where it genuinely runs.</p>
+        <p class="concepts">MS-DOS · DOSBox Pure · Mount Your Own C:</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-dos-console.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-dos-console-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="icon">🍎</div>
+        <h3>The Apple IIe Console</h3>
+        <p class="hook">Apple2TS — an enhanced Apple IIe in the window, Caps Lock on and all. Bring your own disk images; the Oregon Trail door on its page opens the Internet Archive's own player.</p>
+        <p class="concepts">Apple IIe · Apple2TS · Bring Your Own Disks</p>
+        <p class="room">Nerd Heaven — Emulator Box</p>
+        <div class="actions">
+          <a class="btn-play" href="emulators/the-apple-iie-console.html">▶ Play</a>
+          <a class="btn-lesson" href="emulators/the-apple-iie-console-lesson.html">📖 Lesson</a>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="baton" id="baton-box">
+      <h3>📦 The Baton Box — the family post office</h3>
+      <p>The Baton Box is a small server that runs on this computer. It serves the DOS Console
+        with the cross-origin isolation headers it needs, and it relays the pass-and-play games —
+        The Relay, the 6502 Bench, the NES, SNES, and DOS consoles — to everyone on your home
+        network: a phone, a tablet, the kids' iPads, anything on the same Wi-Fi as this machine.</p>
+      <p>Start it here, then open the box in your browser to host or join a game. Stop puts it
+        away. It runs with this computer's Python — the same Python the standalone Baton Box uses —
+        and it only ever serves your home network.</p>
+      <div class="baton-actions">
+        <button class="primary" id="baton-start" type="button">▶ Start the Baton Box</button>
+        <button id="baton-stop" type="button">■ Stop</button>
+        <button id="baton-open" type="button">🌐 Open the Box</button>
+      </div>
+      <p class="baton-status" id="baton-status">Checking the box…</p>
+    </div>
+  </section>
+
   <footer>
     <p>Part of Everyday Cool — the full workshops live at caeled.github.io/everyday-cool ·
       Free to explore. Built with AI assistance. Curated by a human.</p>
   </footer>
 
 </div>
+<script>
+(function () {
+  var status = document.getElementById('baton-status');
+  var btnStart = document.getElementById('baton-start');
+  var btnStop = document.getElementById('baton-stop');
+  var btnOpen = document.getElementById('baton-open');
+  var invoke = (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) || null;
+  if (!invoke) {
+    status.textContent = 'The Baton Box controls work in the desktop app — this page is being read somewhere else.';
+    btnStart.disabled = btnStop.disabled = btnOpen.disabled = true;
+    return;
+  }
+  function show(s) {
+    status.textContent = s.message + (s.running ? '  ' + s.url : '');
+    btnStart.disabled = !!s.running;
+    btnStop.disabled = !s.running;
+  }
+  function fail(e) { status.textContent = 'The box said no: ' + e; }
+  invoke('baton_status').then(show).catch(fail);
+  btnStart.addEventListener('click', function () {
+    status.textContent = 'Starting the Baton Box…';
+    btnStart.disabled = true;
+    invoke('baton_start').then(show).catch(function (e) { fail(e); btnStart.disabled = false; });
+  });
+  btnStop.addEventListener('click', function () {
+    invoke('baton_stop').then(show).catch(fail);
+  });
+  btnOpen.addEventListener('click', function () {
+    invoke('baton_open').then(function () {}, function (e) { fail(e); });
+  });
+})();
+</script>
 </body>
 </html>

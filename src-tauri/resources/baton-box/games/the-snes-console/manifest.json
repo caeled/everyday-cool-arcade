@@ -1,0 +1,9 @@
+{
+  "id": "the-snes-console",
+  "title": "The SNES Console",
+  "page": "the-snes-console.html",
+  "blurb": "A whole Super Nintendo in one folder (Snes9x via EmulatorJS, embedded unmodified) with an empty cartridge slot — players insert their own .sfc/.smc files from their own machine. Freeze a brutal moment and hand the next player its State Code. Note: an SNES State Code is big (the lesson measures one at over a million characters) — it rides the box, but it is the heaviest baton on the shelf.",
+  "stateName": "State Code",
+  "turnEnds": "paste-code",
+  "players": "1-2"
+}

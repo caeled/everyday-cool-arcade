@@ -136,9 +136,273 @@ fn navigate_main(app: &AppHandle, path: &str) {
     }
 }
 
+/// ------------------------------------------------------------------
+/// The Baton Box (Steven's direction, 2026-11-24: the installer must
+/// carry a way to start the relay). The box is a small stdlib-only
+/// Python server, bundled as app resources (src-tauri/resources/
+/// baton-box/, refreshed from the standalone checkout by
+/// tools/sync-dist.sh). It serves the DOS Console with the
+/// cross-origin isolation headers that console's core needs, and it
+/// relays the pass-and-play games to the home network.
+///
+/// The installed resources live somewhere read-only (Program Files),
+/// but the box writes sessions.json beside its script — so the app
+/// runs a working copy from its local data directory, refreshed
+/// whenever the bundled server file changes. The refresh copies file
+/// by file and never touches sessions.json, so the family's games
+/// survive app updates.
+struct BatonState {
+    child: std::sync::Mutex<Option<std::process::Child>>,
+}
+
+#[derive(serde::Serialize)]
+struct BatonStatus {
+    running: bool,
+    url: String,
+    message: String,
+}
+
+const BATON_URL: &str = "http://127.0.0.1:8765/";
+
+/// Locate the bundled Baton Box inside the installed resources. The
+/// resource layout has varied across Tauri versions, so try the known
+/// shapes and say which one answered (the answer rides back in the
+/// start error if the box dies instantly, where Steven can see it).
+fn baton_resource_dir(handle: &AppHandle) -> Option<std::path::PathBuf> {
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    if let Ok(dir) = handle.path().resource_dir() {
+        candidates.push(dir.join("resources").join("baton-box"));
+        candidates.push(dir.join("baton-box"));
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            candidates.push(dir.join("resources").join("baton-box"));
+            candidates.push(dir.join("baton-box"));
+        }
+    }
+    candidates
+        .into_iter()
+        .find(|d| d.join("baton_box.py").is_file())
+}
+
+fn copy_tree(src: &std::path::Path, dest: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        if name == "__pycache__" || name == "sessions.json" {
+            continue;
+        }
+        let from = entry.path();
+        let to = dest.join(&name);
+        if entry.file_type()?.is_dir() {
+            copy_tree(&from, &to)?;
+        } else {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    Ok(())
+}
+
+/// The working copy of the box, in the app's local data directory.
+/// Refreshed only when the bundled baton_box.py differs from the copy
+/// on disk, so a running family's sessions are never disturbed.
+fn baton_runtime_dir(handle: &AppHandle) -> Result<std::path::PathBuf, String> {
+    let src = baton_resource_dir(handle).ok_or_else(|| {
+        "The bundled Baton Box files could not be found in this install.".to_string()
+    })?;
+    let dest = handle
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("baton-box");
+    let bundled = std::fs::read(src.join("baton_box.py")).map_err(|e| e.to_string())?;
+    let current = std::fs::read(dest.join("baton_box.py")).unwrap_or_default();
+    if bundled != current {
+        copy_tree(&src, &dest).map_err(|e| e.to_string())?;
+    }
+    Ok(dest)
+}
+
+/// Find a Python 3 on this machine: the py launcher first on Windows
+/// (it is what the python.org installer registers), then python /
+/// python3 on either platform. The box is stdlib-only, so any Python 3
+/// the standalone box would run on is good enough here.
+fn find_python() -> Option<String> {
+    #[cfg(windows)]
+    let names = ["py", "python", "python3"];
+    #[cfg(not(windows))]
+    let names = ["python3", "python"];
+    for name in names {
+        let ok = std::process::Command::new(name)
+            .arg("--version")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+        if ok {
+            return Some(name.to_string());
+        }
+    }
+    None
+}
+
+/// Is anything already answering on the box's port? (A box Steven
+/// started by hand counts: the shelf reports it as running rather
+/// than launching a second one into a port fight.)
+fn baton_port_up() -> bool {
+    let Ok(addr) = "127.0.0.1:8765".parse::<std::net::SocketAddr>() else {
+        return false;
+    };
+    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(300)).is_ok()
+}
+
+/// The current truth about the box: our child still alive, or the
+/// port answering. A child that died on its own is reaped here.
+fn baton_snapshot(state: &BatonState) -> bool {
+    let mut guard = state.child.lock().unwrap();
+    if let Some(child) = guard.as_mut() {
+        match child.try_wait() {
+            Ok(None) => return true,
+            _ => *guard = None,
+        }
+    }
+    baton_port_up()
+}
+
+#[tauri::command]
+fn baton_status(state: tauri::State<'_, BatonState>) -> BatonStatus {
+    let running = baton_snapshot(&state);
+    BatonStatus {
+        running,
+        url: BATON_URL.into(),
+        message: if running {
+            "The Baton Box is running on this computer."
+        } else {
+            "The Baton Box is stopped."
+        }
+        .into(),
+    }
+}
+
+#[tauri::command]
+fn baton_start(
+    handle: AppHandle,
+    state: tauri::State<'_, BatonState>,
+) -> Result<BatonStatus, String> {
+    {
+        let mut guard = state.child.lock().unwrap();
+        if let Some(child) = guard.as_mut() {
+            match child.try_wait() {
+                Ok(None) => {
+                    return Ok(BatonStatus {
+                        running: true,
+                        url: BATON_URL.into(),
+                        message: "The Baton Box is already running.".into(),
+                    })
+                }
+                _ => *guard = None,
+            }
+        }
+    }
+    if baton_port_up() {
+        return Ok(BatonStatus {
+            running: true,
+            url: BATON_URL.into(),
+            message: "Something is already answering on the box's port — a Baton Box started outside the app is probably already running.".into(),
+        });
+    }
+    let dir = baton_runtime_dir(&handle)?;
+    let python = find_python().ok_or_else(|| {
+        "Python was not found on this computer — the Baton Box needs Python 3, the same one the standalone box uses.".to_string()
+    })?;
+    let mut cmd = std::process::Command::new(&python);
+    cmd.arg("baton_box.py")
+        .current_dir(&dir)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    #[cfg(windows)]
+    {
+        // No console window flashing over the arcade: the box is a
+        // background server, and its face is the browser page.
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Could not start Python: {e}"))?;
+    // Give it a moment to bind the port; if it died instantly, say so
+    // plainly and name the folder where running it by hand shows why.
+    std::thread::sleep(std::time::Duration::from_millis(700));
+    match child.try_wait() {
+        Ok(Some(status)) => Err(format!(
+            "The Baton Box stopped as soon as it started ({status}). Its files live in {} — running baton_box.py there by hand will show the error.",
+            dir.display()
+        )),
+        _ => {
+            *state.child.lock().unwrap() = Some(child);
+            Ok(BatonStatus {
+                running: true,
+                url: BATON_URL.into(),
+                message: "The Baton Box is running on this computer. Open the box to host or join a game.".into(),
+            })
+        }
+    }
+}
+
+#[tauri::command]
+fn baton_stop(state: tauri::State<'_, BatonState>) -> BatonStatus {
+    let mut killed = false;
+    {
+        let mut guard = state.child.lock().unwrap();
+        if let Some(mut child) = guard.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+            killed = true;
+        }
+    }
+    if baton_port_up() {
+        BatonStatus {
+            running: true,
+            url: BATON_URL.into(),
+            message: "The app's box is stopped, but something is still answering on the port — a Baton Box started outside the app is still running.".into(),
+        }
+    } else {
+        BatonStatus {
+            running: false,
+            url: BATON_URL.into(),
+            message: if killed {
+                "The Baton Box is stopped."
+            } else {
+                "The Baton Box was not running."
+            }
+            .into(),
+        }
+    }
+}
+
+#[tauri::command]
+fn baton_open(handle: AppHandle) -> Result<(), String> {
+    handle
+        .opener()
+        .open_url(BATON_URL, None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
 fn main() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(BatonState {
+            child: std::sync::Mutex::new(None),
+        })
+        .invoke_handler(tauri::generate_handler![
+            baton_start,
+            baton_stop,
+            baton_status,
+            baton_open
+        ])
         .menu(|handle| {
             // The main app's File | Help shape, adapted: the Arcade
             // keeps no per-user data, so the File menu carries only
@@ -277,6 +541,19 @@ fn main() {
                 .build()?;
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running Everyday Cool Arcade");
+    app.run(|handle, event| {
+        // The box belongs to the arcade evening: when the app goes
+        // away (including the Clear Cache restart), the box it
+        // launched goes with it. A box Steven started by hand is
+        // untouched — only this process's own child is reaped.
+        if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
+            let state = handle.state::<BatonState>();
+            let mut guard = state.child.lock().unwrap();
+            if let Some(mut child) = guard.take() {
+                let _ = child.kill();
+            }
+        }
+    });
 }

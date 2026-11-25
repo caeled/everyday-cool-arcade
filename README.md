@@ -9,9 +9,19 @@ button wherever a lesson exists, so the front door (play) and the back door
 the kind of thing a teacher can install, try — Gravity Golf has a way of
 warming up neurons — and justify: the lessons are right there in the package.
 
-## Inventory (v1.0.0)
+## Inventory (v1.3.0)
 
-**21 games, 20 with lessons attached.**
+**37 games, 36 with lessons attached — plus the Emulator Box.**
+
+New in v1.3.0: **the Emulator Box** — the six Nerd Heaven consoles (the
+6502 Bench, the 2600, NES, SNES, and DOS consoles, and the Apple IIe
+Console), bundled whole with their racks and audit lessons under
+`dist/emulators/`. The Arcade ships the machines, never the games:
+players bring cartridges, disks, and program files from their own
+libraries. The shelf also carries a **Start the Baton Box** control:
+the Baton Box server (bundled under `src-tauri/resources/baton-box/`)
+serves the DOS Console with the isolation headers its core needs and
+relays the pass-and-play games to the home network.
 
 With lessons: Bridge Builder — Truss Stress Sim, Orbital Slingshot —
 Gravity Golf, Lunar Lander — Thruster Cave, Docking — Orbital Rendezvous,
@@ -42,6 +52,17 @@ not standalone games, and are not included.
   games and lessons back to their home rooms do not resolve inside the
   package — the full workshops live on the web, and the interface's
   footer carries the address.
+- `dist/emulators/` — the Emulator Box: the six console pages and their
+  lessons copied flat (they cross-link siblings by bare filename), with
+  their racks (`javatari/`, `jsnes/`, `emulatorjs-snes/`,
+  `emulatorjs-dos/`, `apple2ts/`) copied whole. Its `index.html` is a
+  stub bouncing the consoles' room-index link back to the shelf.
+- `src-tauri/resources/baton-box/` — the Baton Box server bundle the
+  shelf's Start-the-Baton-Box control runs (refreshed from the
+  standalone `baton-box` checkout by the sync script). At runtime the
+  app copies it to its local data directory — the box writes
+  `sessions.json` beside its script, and install folders are
+  read-only — and launches it with the system Python.
 - `tools/games.manifest` — the game inventory (slug, source project,
   game file, lesson file, support files).
 - `tools/sync-dist.sh` — re-assembles `dist/` from a collection checkout.
