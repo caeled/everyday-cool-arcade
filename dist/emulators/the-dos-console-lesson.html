@@ -397,6 +397,190 @@
   That receipt belongs to the first click on an ordinary connection, and the
   door is honest about being theirs in the meantime.</p>
 
+  <h2>The mount that failed in Steven's hands — and the folder door (26 November 2026)</h2>
+  <p><b>What happened.</b> Steven installed the Emulator Box app, opened this
+  console, and picked his real C: archive — a zip he knows is good, because
+  desktop DOSBox mounts it. The page refused it: <em>“The zip couldn't be
+  read: The requested file could not be read, typically due to permission
+  problems that have occurred after a reference to a file was acquired.”</em>
+  A copy moved to a local folder failed the same way; so did a copy with its
+  permissions opened up. Stock answers, all three — and all three wrong,
+  because the file was never the problem.</p>
+  <p><b>The diagnosis.</b> The page read the whole archive in a single
+  <code>file.arrayBuffer()</code> call. In the app's WebView2, that one-shot
+  read of a very large file is refused outright, with exactly that
+  misleading permission sentence. Driven headlessly, the same page mounted a
+  42&nbsp;MB test archive without complaint — the failure lives in the
+  one-shot read in his environment, not in his archive and not in the zip
+  format.</p>
+  <p><b>His correction, which was right:</b> DOSBox doesn't make you zip
+  anything — it mounts a folder. The zip requirement made the console harder
+  than the machine it emulates. The zip existed because a web page cannot
+  see a folder <em>path</em>; but a directory picker hands the page the
+  folder's files with their relative paths, and that turns out to be enough.</p>
+  <p><b>The fix, shipped the same morning.</b> (1) Every read on both doors is
+  now sliced — 16&nbsp;MB chunks instead of one gulp — and the read starts
+  before the picker is cleared. (2) Door one gained a second key:
+  <em>“…or mount the folder itself…”</em> — pick the drive folder and the
+  page builds the same boot drive from its files in memory (stored
+  uncompressed, the same generated <code>CONSOLE.CONF</code> added), nothing
+  uploaded, the folder on disk untouched.</p>
+  <p><b>The audit.</b> Both doors driven headlessly against a 42&nbsp;MB test
+  drive (seven files, one of them 36&nbsp;MB): the zip door reached the DOS
+  prompt in about six seconds; the folder door in about four — DOSBox Pure
+  parsed the page-built folder zip, mounted it, and presented the prompt,
+  which is the receipt that counts. The closing receipt is still Steven's:
+  his own archive mounting — under the engine swapped in
+  the same morning, in the section below, which needs no app and no box.</p>
+
+
+  <h2>Field use: the reading room (26 November 2026)</h2>
+  <p>Steven's note, watching his own archive walk in: a console like this is
+  not only for games. Point the folder door at <em>a folder copied off a
+  real machine's C: drive</em> — an old disk read through a USB adapter —
+  and the whole tree stands up at a DOS prompt, openable by the very
+  programs that wrote the data. That is a support instrument, not an
+  exhibit: half of data recovery is finding a reader old enough to
+  understand the files. So the console grew its fourth door the same
+  morning: <strong>Rescue files</strong>. List what is on the mounted
+  drive (the engine's own filesystem tree), tick the files, and the page
+  reads them back out and builds a zip in the browser for download — the
+  virtual F: drive, wearing web clothes. The audit's receipts: the test
+  drive listed its skeleton's five files honestly (the deferred WAD was
+  not yet in the machine, and not listed); after the GAMES folder was
+  loaded from the lazy panel, the list grew to six, and the rescued
+  DOOM1.WAD and AUTOEXEC.BAT came out <strong>byte-identical</strong> to
+  the source drive. The boundary, printed on the door itself: it rescues
+  files from a readable copy — a physically dying disk needs its imaging
+  step first. The console is the reading room, not the ambulance. Steven's
+  summary of the whole exhibit stands as this section's receipt: <em>"a
+  game as a lesson that turned into a tool… a full DOS emulator and a
+  tool you can use to recover data — for Nerd Heaven."</em></p>
+  <h2>The size wall, and the streaming door (26 November 2026)</h2>
+  <p>Hours after the swap, Steven tried to mount his <em>whole</em> archive at
+  once: the C: folder zipped, 2,220,069,881 bytes. The player answered
+  <em>"offset is out of bounds"</em> — and the number is the whole diagnosis.
+  A browser will not hold a single file buffer past 2,147,483,647 bytes
+  (2<sup>31</sup> − 1); his zip was 72 MB past that line. The old folder key
+  had the same wall hidden inside it: it read every file, then built one
+  bundle out of all of them, so the drive had to fit in the browser twice
+  over. No setting raises that ceiling — it is the browser's, not the
+  page's.</p>
+  <p>So the folder key stopped bundling. It now boots the machine on a
+  conf-only bundle — an empty drive and a prompt — and then copies the
+  picked folder into the running machine <strong>file by file</strong>,
+  streamed (the player's own <code>fsWriteFile</code>, fed from each
+  file's stream), so nothing is ever held whole. One wrinkle, measured:
+  DOSBox caches its drive listing at mount time, so files that arrive
+  after the mount are invisible to <code>DIR</code> until the cache is
+  cleared — DOS has a word for that, <code>RESCAN</code>, and when the
+  copy finishes the console types it itself. The audit trail: the 42 MB
+  test drive streamed in through the shipped page's own folder door,
+  the screen showed the page's typed <code>rescan</code> answered by
+  <em>"Drive cache cleared."</em>, and the prompt that followed listed
+  every streamed file. The ceiling that remains is the honest one: the
+  drive lives in the machine's memory, so a drive needs roughly its own
+  size in free memory — gigabytes are fine on a machine that has them.
+  The zip key keeps the bundle route and its one-piece limit, and now
+  says so in plain words before it tries, pointing at the folder key —
+  which is where a whole archive belonged all along.</p>
+  <h2>The lazy drive (26 November 2026, later still)</h2>
+  <p>Steven's refinement, in his words: <em>"load the directory of the big C,
+  then only load a subfolder if needed — that would manage it the way DOS
+  did."</em> He is right about the principle: DOS never loaded a drive; it
+  read the disk when a program reached for something. A web page cannot
+  intercept DOSBox's reads, so the console now does the honest version of
+  the same shape. The folder key partitions the picked drive into a
+  <strong>skeleton</strong> — every folder, every file up to 256 KB, and
+  each folder's smallest file, so no folder arrives empty — and the rest,
+  grouped by top-level folder. The skeleton streams in first and the
+  prompt is live in seconds, the whole directory tree walkable by
+  <code>DIR</code> and <code>CD</code>. The big folders wait in a panel
+  under the screen with their true sizes; each Load button streams just
+  that folder in, followed by the console's own typed <code>RESCAN</code>.
+  The audit drove the shipped page: the 42 MB test drive arrived as a
+  skeleton with two deferred groups — the drive root's 36 MB data file
+  and the GAMES folder's WAD (its DOOM.EXE, the folder's smallest file,
+  rode the skeleton) — the panel's real Load button streamed the WAD in,
+  the DOS screen showed two rescan cycles, each answered <em>"Drive cache
+  cleared."</em>, and the unloaded file stayed out until called for. The
+  named bend: until a folder is loaded, DOS sees it as an empty folder —
+  the panel, not the DIR, is the truth about what is in. One more piece of furniture, added at Steven's word the same morning: picking a folder can make the browser show a large "upload" confirmation — his count was 47,191 files — and startup on a big drive takes a minute or two, so the folder button now warns first, in a panel carrying his own text: <em>"With a larger drive start up may take a minute or two, and you may get a browser message about uploading a lot of files. What it is doing is uploading the directory into the VM that runs the emulator. No files are copied off your machine."</em> Warn about the warning, before it happens.</p>
+  <h2>The counted load \u2014 a guard on the lazy drive (26 November 2026)</h2>
+  <p>The lazy drive's first full field run was Steven's own: he picked his
+  whole archive, pressed <em>Load everything</em>, watched the completion
+  line print \u2014 <em>Everything is in</em> \u2014 and then could not get
+  control of the machine again. No click landed, no key typed. Reproduced
+  here in miniature, small drives load and type perfectly after panel
+  loads, and the page's own code had plainly finished (the completion line
+  is the last thing it prints). What had died was the emulator underneath,
+  carrying some two and a half gigabytes in its memory: this engine dies
+  silently when its memory runs out, and a dead machine inside a living
+  page reads exactly like a freeze.</p>
+  <p>The fix is that loads are now <em>counted</em>. The lazy panel keeps a
+  running total \u2014 <em>In the machine so far: X of Y on this drive</em>
+  \u2014 and any load, one folder or everything at once, whose projected
+  total would pass 1.5 GB stops before it starts, says why in plain words,
+  and re-labels its own button <em>\u2026anyway</em>: a second click loads
+  it regardless. Nothing is blocked and nothing is decided for the visitor;
+  the load just asks once, the way the folder door asks before the
+  browser's upload warning. Clicking the screen also now hands the
+  player's canvas the keyboard focus explicitly, so typing has a definite
+  home.</p>
+  <p>Audit receipts: an ordinary load runs untouched (the total line read
+  493 KB of 40.5 MB at the skeleton and 4.5 MB after GAMES); with the
+  counter forced past the line in a test rig, the first click printed the
+  warning, re-labelled the button, and loaded nothing, and the second
+  click loaded the folder; a click on the screen lands focus on the
+  canvas; no page exceptions. One honest footnote: the first guard test
+  appeared to fail because the test itself set 1,600,000,000 bytes
+  against a 1.5 GiB line \u2014 1,610,612,736 bytes \u2014 and the guard,
+  correctly, did not fire. The test was wrong, not the guard; units are a
+  diagnosis too.</p>
+  <h2>The engine swap — DOS that runs anywhere (26 November 2026)</h2>
+  <p>The morning the folder door shipped, Steven did what the lesson above had
+  been asking him to do: he opened the console in the Emulator Box app and
+  tried to mount his archive. The read fix worked — his DOOM.zip parsed, its
+  programs were found — and then the machine refused to switch on, because the
+  app's window, like GitHub Pages and like a lone saved file, is not a
+  cross-origin isolated room, and DOSBox Pure ships only in a threaded build
+  that needs one. The Baton Box could serve the console with the right
+  headers, and by the end of the morning it did — but Steven's verdict on the
+  whole arrangement was the design correction this exhibit needed: <em>if he
+  has to run a server, copy addresses, and pick the right window, no learner
+  and no teacher will ever get this far.</em> A console a classroom can't
+  switch on is not a console.</p>
+  <p>So the engine was swapped, the same operation the SNES Console went
+  through the night before. Out: DOSBox Pure via EmulatorJS (threaded,
+  isolation-bound). In: <strong>DOSBox via the js-dos player</strong> (v8.5.4,
+  GPL-2.0, vendored unmodified in <code>jsdos-dos/</code> — the pairing that
+  serves DOS games to the whole internet at dos.zone). This DOSBox build is
+  not threaded, so it needs no isolation, no headers, no server: the page
+  boots standing anywhere a page can stand, including inside the app window
+  itself. The Baton Box goes back to its real job — passing games between
+  people — and the State Code door went with the old engine: the player's own
+  save button keeps a session now, because saving was always the machine's
+  job, not the player's.</p>
+  <p>What the swap changed under the doors: the page now packages your files
+  as a <strong>js-dos bundle</strong> (.jsdos) — your files plus one small
+  written-by-the-page <code>.jsdos/dosbox.conf</code> whose first commands
+  mount the package as C: and hand over the prompt. Two measured facts about
+  that reader, both learned by breaking it: the bundle's <em>directory
+  entries must come before the files inside them</em> (files first, it dies
+  with <code>GAMES/DOOM: No such file or directory</code> and a black screen),
+  and it <em>extracts but does not mount</em> — the explicit
+  <code>MOUNT C .</code> in the conf is load-bearing. The audit drove the
+  shipped page on a plain server that sends no headers at all (the page
+  itself reported <code>crossOriginIsolated: false</code>): the 42 MB test
+  archive mounted through the zip door to a <code>C:\&gt;</code> prompt in
+  about three seconds, the folder door did the same from loose files, and the
+  one-game door booted and ran its suggested program. The closing receipt is
+  once again Steven's, and it is the only one that closes anything: his own
+  archive, mounted by his own hand, on the live page.</p>
+  <p>Everything above this section about DOSBox Pure — the threads table, the
+  zero-height picture, the baton measurements — stands as the honest record
+  of the console's first engine. It is history now, not instructions.</p>
+
   <h2>Honest notes</h2>
   <div class="honest">
     <p><b>The boot settings are the console's, stated:</b> the generated conf sets
@@ -422,11 +606,12 @@
     (196,650 characters, measured above) rides sessions there, and the box
     serves the rack itself. The SNES's clipboard-only baton stands as it was;
     this console's travels first-class.</p>
-    <p><b>Nothing here was run on Steven's machine.</b> This lesson is an audit
-    receipt from a headless browser in a sandbox: the page, the rack and every
-    drive above are real and reproducible, but the console's first boot in
-    Steven's hands — his archive, his drive, his prompt — is the receipt that
-    closes this build, and it hasn't happened yet.</p>
+    <p><b>Nothing here was run on Steven's machine — until it was.</b> This
+    lesson began as an audit receipt from a headless browser in a sandbox.
+    On 26 November 2026 the console ran in Steven's hands for the first time
+    (in the Emulator Box app) — which is how the mount failure in the section
+    above was found. The receipt that closes this build is now narrower: his
+    archive mounting under the fixed build, in the app, at his prompt.</p>
   </div>
 
   <h2>Keep going</h2>

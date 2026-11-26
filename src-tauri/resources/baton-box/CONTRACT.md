@@ -101,6 +101,7 @@ game, `test-echo`, registered by manifest alone.
 All JSON. Base: `http://<host>:8917`.
 
 - `GET /api/games` — the shelf.
+- `GET /api/disks/<id>` — the disk shelf: a small allowlist of public disk images (today: `oregon-trail`) the box fetches server-side from the Internet Archive, caches under `disks/`, and serves with `Access-Control-Allow-Origin: *` so a console page hosted elsewhere can load a disk through the box on the same machine. It is a shelf, not a proxy: unlisted ids get a 404, and a fetch that arrives the wrong size is refused.
 - `GET /api/sessions` — all sessions (summaries + current blob).
 - `POST /api/sessions` — `{gameId, title, players[], state}` → `201`
   with the session, including its new `code`. `state` may be empty: the

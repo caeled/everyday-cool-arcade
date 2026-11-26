@@ -143,3 +143,14 @@ test port, and drives the full loop over real HTTP. **20/20 passed**
   in the steps on every session page and in the help notes. If a future
   client adds a `#import=` hook, the box can grow a deep link without
   changing the contract.
+
+## The disk shelf
+
+The box also keeps a small **disk shelf** (`GET /api/disks/<id>`): an allowlist of
+public disk images it will fetch server-side and hand to a console page. Web pages
+cannot fetch these files themselves — the Internet Archive's file servers send no
+CORS permission — but the box is a program on your machine, so it fetches the file
+the way a download would, caches it under `disks/`, and serves it locally. Today
+the shelf holds one disk: The Oregon Trail (MECC, 1985), which the Apple IIe
+console's door loads through the box in one click. Only allowlisted disks can ever
+be fetched; the shelf is not a proxy.
